@@ -1,0 +1,255 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = " Заказы";
+}
+
+    <div id="container">
+        <span id="message"></span>
+        <div id="order-info" style="display:none;">
+            <table class="table table-striped table-responsive">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th scope="col">Книга</th>
+                        <th scope="col">Автор</th>
+                        <th scope="col">Кол-во</th>
+                        <th scope="col">Цена</th>
+                    </tr>
+                </thead>
+                <tbody id="order-info-body">
+                </tbody>
+            </table>
+        </div>
+        <div id="table">
+            <table class="table table-responsive table-striped">
+
+                <thead>
+                    <tr>
+                        <th scope="col">ID#</th>
+                        <th scope="col">Имя</th>
+                        <th scope="col">Пользователь</th>
+                        <th scope="col">Адрес</th>
+                        <th scope="col">Контакты</th>
+                        <th scope="col">Кол-во</th>
+                        <th scope="col">Сумма</th>
+                        <th scope="col">Дата</th>
+                        <th scope="col">Отменен</th>
+                        <th scope="col">Доставлено</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody id="order-body">
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+@section Scripts{ 
+    
+    <script type="text/javascript">
+        const monthNames = [
+            'Январь', 'Февраль', 'Март', 'Апрель',
+            'Май', 'Июнь', 'Июль', 'Август',
+            'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+        ];
+        const orderInfoContainerEl = document.getElementById('order-info');
+        const orderInfoTableBodyEl = document.getElementById('order-info-body');
+        const timeToHideMessage = 1500; 
+        const message = document.getElementById('message');
+        const orderBodyEl = document.getElementById('order-body');
+        getOrders();
+        function getOrders() {
+            $.ajax({
+                type: 'GET',
+                dataType: 'json',
+                url: '/Admin/GetOrders/',
+                success: function(result, status, xhr) {
+                    if (result.length > 0) {
+                        showResult(result);
+                    }
+                }, 
+                error: function (xhr, status, error) {
+                    message.textContent = 'Произошла ошибка';
+                    message.style.display = 'block';
+                    message.className = 'text-danger';
+                    setTimeout(() => {
+                        message.style.display = 'none';
+                    }, timeToHideMessage);
+                },
+            });
+        }
+        function showResult(orders) {
+            orderBodyEl.innerHTML = '';
+            for (let i = 0; i < orders.length; i++) {
+                const order = orders[i];
+
+                const orderRowEl = document.createElement('tr');
+                orderRowEl.dataset.id = order.id;
+                orderBodyEl.appendChild(orderRowEl);
+
+                const orderNumberEl = document.createElement('td');
+                orderNumberEl.textContent = order.id;
+                orderRowEl.appendChild(orderNumberEl);
+
+                const orderNameEl = document.createElement('td');
+                orderNameEl.textContent = order.receiverName;
+                orderRowEl.appendChild(orderNameEl);
+
+                const orderUsernameEl = document.createElement('td');
+                orderUsernameEl.textContent = order.username;
+                orderRowEl.appendChild(orderUsernameEl);
+
+                const orderAddressEl = document.createElement('td');
+                orderAddressEl.textContent = order.address; 
+                orderRowEl.appendChild(orderAddressEl);
+
+                const orderPhoneNumberEl = document.createElement('td');
+                orderPhoneNumberEl.textContent = order.phoneNumber;
+                orderRowEl.appendChild(orderPhoneNumberEl);
+
+                const orderAmountEl = document.createElement('td');
+                orderAmountEl.textContent = order.amountOfBooks + ' шт.';
+                orderRowEl.appendChild(orderAmountEl);
+
+                const orderSumEl = document.createElement('td');
+                orderSumEl.textContent = order.amountOfCost + ' c.';
+                orderRowEl.appendChild(orderSumEl);
+
+                const orderDateEl = document.createElement('td');
+                orderDateEl.textContent = formatDate(new Date(order.orderCreatedTime));
+                orderRowEl.appendChild(orderDateEl);
+
+                const orderCanceled = document.createElement('td');
+                orderCanceled.textContent = 'Нет';
+                if (order.isCanceled == true) {
+                    orderCanceled.textContent = 'Да';
+                }
+                orderRowEl.appendChild(orderCanceled);
+
+                const orderDeliveredContainerEl = document.createElement('td');
+                orderRowEl.appendChild(orderDeliveredContainerEl);
+
+                const orderDeliveredCheckBoxEl = document.createElement('input');
+                orderDeliveredCheckBoxEl.type = 'checkbox';
+                if (order.isDelivered == true) {
+                    orderDeliveredCheckBoxEl.checked = 'checked';
+                    orderDeliveredCheckBoxEl.disabled = 'disabled';
+                }
+                orderDeliveredCheckBoxEl.dataset.id = order.id;
+                orderDeliveredCheckBoxEl.dataset.action = 'delivered';
+                orderDeliveredContainerEl.appendChild(orderDeliveredCheckBoxEl)
+
+                const buttonInfoContainerEl = document.createElement('td');
+                orderRowEl.appendChild(buttonInfoContainerEl);
+
+                const buttonInfoEl = document.createElement('button');
+                buttonInfoEl.className = 'btn';
+                buttonInfoEl.dataset.action = 'info-order';
+                buttonInfoContainerEl.appendChild(buttonInfoEl);
+
+                const buttonInfoIconEl = document.createElement('i');
+                buttonInfoIconEl.className = 'fa fa-info';
+                buttonInfoIconEl.dataset.action = 'info-order';
+                buttonInfoEl.appendChild(buttonInfoIconEl);
+
+                orderDeliveredCheckBoxEl.addEventListener('change', evt => {
+                    const id = evt.currentTarget.dataset.id;
+                    changeOrderValue(id, evt.currentTarget);
+                });
+                orderRowEl.addEventListener('click', evt => {
+                    const orderId = evt.currentTarget.dataset.id;
+                    if (evt.target.dataset.action === 'info-order') {
+                        showInfoOrder(orderId);
+                        return;
+                    }
+                });
+
+            }
+        }
+
+        function changeOrderValue(id, checkbox) {
+            $.ajax({
+                type: 'PUT',
+                dataType: 'json',
+                url: `/Admin/UpdateOrder/${id}`,
+                success: function (result, status, xhr) {
+                    if (result.success === 'done') {
+                        const orderRow = orderBodyEl.querySelector(`[data-id="${id}"]`);
+                        checkbox.disabled = 'disabled';
+                    }
+                },
+                error: function (xhr, status, error) {
+
+                },
+            });
+        }
+
+        function formatDate(date) {
+            const day = date.getDate();
+            const monthIndex = date.getMonth();
+            const year = date.getFullYear();
+            return new String(day + '/' + monthNames[monthIndex] + '/' + year);
+        }
+        function showInfoOrder(orderId) {
+            $.ajax({
+                type: 'GET',
+                url: `/Admin/GetOrderInfo/${orderId}`,
+                dataType: 'json',
+                success: function (result, status, xhr) {
+                    if (result.length > 0) {
+                        showResultOfOrderInfo(result);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    message.className = 'text-danger'
+                    message.style.display = 'block';
+                    message.textContent = 'Произошла ошибка';
+                    setTimeout(() => {
+                        message.style.display = 'none';
+                    }, timeToHideMessage);
+                }
+
+
+            });
+        }
+        function showResultOfOrderInfo(orders) {
+            orderInfoTableBodyEl.innerHTML = '';
+            orderInfoContainerEl.style.display = 'block';
+            for (let i = 0; i < orders.length; i++) {
+                const order = orders[i];
+
+                const orderInfoRowEl = document.createElement('tr');
+                orderInfoTableBodyEl.appendChild(orderInfoRowEl);
+
+                const orderImageContainerEl = document.createElement('td');
+                orderInfoRowEl.appendChild(orderImageContainerEl);
+
+                const orderImageEl = document.createElement('img');
+                orderImageEl.width = '50';
+                orderImageEl.height = '50';
+                orderImageEl.src = '/images/' + order.imageLink;
+                orderImageContainerEl.appendChild(orderImageEl);
+
+                const orderNameEl = document.createElement('td');
+                orderNameEl.textContent = order.title;
+                orderInfoRowEl.appendChild(orderNameEl);
+
+                const orderAuthorEl = document.createElement('td');
+                orderAuthorEl.textContent = order.author;
+                orderInfoRowEl.appendChild(orderAuthorEl);
+
+                const orderAmountEl = document.createElement('td');
+                orderAmountEl.textContent = order.amount;
+                orderInfoRowEl.appendChild(orderAmountEl);
+
+                const orderBookCostEl = document.createElement('td');
+                orderBookCostEl.textContent = order.bookCost;
+                orderInfoRowEl.appendChild(orderBookCostEl);
+
+            }
+        }
+
+    </script>
+
+}

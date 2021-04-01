@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "iBook.tj", "iBook.tj\iBook.tj.csproj", "{DAE6736F-32A3-4ABD-A871-D5B788AE0EA5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DAE6736F-32A3-4ABD-A871-D5B788AE0EA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DAE6736F-32A3-4ABD-A871-D5B788AE0EA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DAE6736F-32A3-4ABD-A871-D5B788AE0EA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DAE6736F-32A3-4ABD-A871-D5B788AE0EA5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A4C98931-C72A-4B73-BE19-A4FF5C85F8CF}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,261 @@
+﻿@{
+    var username = User.Identity.Name;
+    ViewData["Title"] = "Заказы|-iBook.tj";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    List<iBook.tj.Models.Order> ordersList = ViewBag.OrdersList;
+}
+<input id="username" value="@username"  type="hidden"/>
+<span id="message"></span>
+<div id="container">
+    <div id="order-info" class="justify-content-center" style="display:none;">
+        <table class="table table-striped table-responsive">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th scope="col">Книга</th>
+                    <th scope="col">Автор</th>
+                    <th scope="col">Кол-во</th>
+                    <th scope="col">Цена</th>
+                </tr>
+            </thead>
+            <tbody id="order-info-body">
+
+            </tbody>
+        </table>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">#ID</th>
+                    <th scope="col">Кому</th>
+                    <th scope="col">Адрес</th>
+                    <th scope="col">Контакты</th>
+                    <th scope="col">Кол-во</th>
+                    <th scope="col">Общая сумма</th>
+                    <th scope="col">Дата</th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody id="order-table">
+            </tbody>
+        </table>
+    </div>
+</div>
+@section Scripts{ 
+    <script type="text/javascript">
+        const monthNames = [
+            'Январь', 'Февраль', 'Март', 'Апрель',
+            'Май', 'Июнь', 'Июль', 'Август',
+            'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+        ];
+
+        const timeToHideMessage = 1500;
+
+        const message = document.getElementById('message');
+        const orderTableEl = document.getElementById('order-table');
+        const username = $('#username').val();
+        const orderInfoContainerEl = document.getElementById('order-info');
+        const orderInfoTableBodyEl = document.getElementById('order-info-body');
+
+        getOrders();
+        function getOrders() {
+            $.ajax({
+                type: 'GET',
+                dataType: 'json',
+                url: `/Home/GetOrders/${username}`,
+                async: true,
+                success: function (result, status, xhr) {
+                    if (result != undefined || result != null) {
+                        showOrders(result);
+                    }
+                },
+                error: function (xhr, status, error) {
+
+                },
+            });
+        }
+
+        function formatDate(date) {
+            const day = date.getDate();
+            const monthIndex = date.getMonth();
+            const year = date.getFullYear();
+            return new String(day + '/' + monthNames[monthIndex] + '/' + year);
+        }
+
+        function showOrders(orders) {
+
+            for (let i = 0; i < orders.length; i++) {
+                const order = orders[i];
+
+                const date = new Date(order.orderCreatedTime);
+
+                const orderDate = formatDate(date);
+
+                const orderRowEl = document.createElement('tr');
+                orderRowEl.dataset.orderId = order.id;
+                orderTableEl.appendChild(orderRowEl);
+
+                const orderNumberEl = document.createElement('td');
+                orderNumberEl.textContent = order.id;
+                orderRowEl.appendChild(orderNumberEl);
+
+                const orderRecieverNameEl = document.createElement('td');
+                orderRecieverNameEl.textContent = order.receiverName;
+                orderRowEl.appendChild(orderRecieverNameEl);
+
+                const orderAddressEl = document.createElement('td');
+                orderAddressEl.textContent = order.address;
+                orderRowEl.appendChild(orderAddressEl);
+
+                const orderPhoneNumberEl = document.createElement('td');
+                orderPhoneNumberEl.textContent = order.phoneNumber;
+                orderRowEl.appendChild(orderPhoneNumberEl);
+
+                const orderAmountOfBooksEl = document.createElement('td');
+                orderAmountOfBooksEl.textContent = order.amountOfBooks + ' шт.';
+                orderRowEl.appendChild(orderAmountOfBooksEl);
+
+                const orderAmountOfCostEl = document.createElement('td');
+                orderAmountOfCostEl.textContent = order.amountOfCost + ' с.';
+                orderRowEl.appendChild(orderAmountOfCostEl);
+
+                const orderDateTimeEl = document.createElement('td');
+                orderDateTimeEl.textContent = orderDate;
+                orderRowEl.appendChild(orderDateTimeEl);
+
+                if (order.isDelivered == false) {
+                    const buttonDeleteContainerEl = document.createElement('td');
+                    orderRowEl.appendChild(buttonDeleteContainerEl);
+
+                    const buttonDeleteEl = document.createElement('button');
+                    buttonDeleteEl.className = 'btn btn-danger';
+                    buttonDeleteEl.dataset.action = 'delete-order';
+                    buttonDeleteContainerEl.appendChild(buttonDeleteEl);
+
+                    const buttonDeleteIconEl = document.createElement('i');
+                    buttonDeleteIconEl.className = 'fa fa-trash';
+                    buttonDeleteIconEl.dataset.action = 'delete-order';
+                    buttonDeleteEl.appendChild(buttonDeleteIconEl);
+
+                }
+                else {
+                    const orderDeliveredTextEl = document.createElement('td');
+                    orderDeliveredTextEl.textContent = 'Доставлено';
+                    orderDeliveredTextEl.className = 'text-success';
+                    orderRowEl.appendChild(orderDeliveredTextEl);
+                }
+
+                const buttonInfoContainerEl = document.createElement('td');
+                orderRowEl.appendChild(buttonInfoContainerEl);
+
+                const buttonInfoEl = document.createElement('button');
+                buttonInfoEl.className = 'btn';
+                buttonInfoEl.dataset.action = 'info-order';
+                buttonInfoContainerEl.appendChild(buttonInfoEl);
+
+                const buttonInfoIconEl = document.createElement('i');
+                buttonInfoIconEl.className = 'fa fa-info';
+                buttonInfoIconEl.dataset.action = 'info-order';
+                buttonInfoEl.appendChild(buttonInfoIconEl);
+
+                orderRowEl.addEventListener('click', evt => {
+                    const orderId = evt.currentTarget.dataset.orderId;
+                    if (evt.target.dataset.action === 'delete-order') {
+                        deleteOrder(orderId, evt.currentTarget);
+                        return;
+                    }
+                    if (evt.target.dataset.action === 'info-order') {
+                        showInfoOrder(orderId, evt.currentTarget);
+                        return;
+                    }
+                });
+            }
+        }
+        function deleteOrder(orderId, orderRow) {
+            $.ajax({
+                type: 'DELETE',
+                url: `/Home/DeleteOrder/${orderId}`,
+                dataType: 'json',
+                success: function (result, status, xhr) {
+                    if (result.success == 'done') {
+                        orderTableEl.removeChild(orderRow);
+                        message.className = 'text-success'
+                        message.style.display = 'block';
+                        message.textContent = 'Успешно удалена';
+                        setTimeout(() => {
+                            message.style.display = 'none';
+                        }, timeToHideMessage);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    message.className = 'text-danger'
+                    message.style.display = 'block';
+                    message.textContent = 'Произошла ошибка';
+                    setTimeout(() => {
+                        message.style.display = 'none';
+                    }, timeToHideMessage);
+                },
+            });
+        }
+        function showInfoOrder(orderId) {
+            $.ajax({
+                type: 'GET',
+                url: `/Home/GetOrderInfo/${orderId}`,
+                dataType: 'json',
+                success: function (result, status, xhr) {
+                    if (result.length > 0) {
+                        showResultOfOrderInfo(result);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    message.className = 'text-danger'
+                    message.style.display = 'block';
+                    message.textContent = 'Произошла ошибка';
+                    setTimeout(() => {
+                        message.style.display = 'none';
+                    }, timeToHideMessage);
+                }
+
+
+            });
+        }
+        function showResultOfOrderInfo(orders) {
+            orderInfoTableBodyEl.innerHTML = '';
+            orderInfoContainerEl.style.display = 'block';
+            for (let i = 0; i < orders.length; i++) {
+                const order = orders[i];
+
+                const orderInfoRowEl = document.createElement('tr');
+                orderInfoTableBodyEl.appendChild(orderInfoRowEl);
+
+                const orderImageContainerEl = document.createElement('td');
+                orderInfoRowEl.appendChild(orderImageContainerEl);
+
+                const orderImageEl = document.createElement('img')
+                orderImageEl.width = '50';
+                orderImageEl.height = '50';
+                orderImageEl.src = '/images/' + order.imageLink;
+                orderImageContainerEl.appendChild(orderImageEl);
+
+                const orderNameEl = document.createElement('td');
+                orderNameEl.textContent = order.title;
+                orderInfoRowEl.appendChild(orderNameEl);
+
+                const orderAuthorEl = document.createElement('td');
+                orderAuthorEl.textContent = order.author;
+                orderInfoRowEl.appendChild(orderAuthorEl);
+
+                const orderAmountEl = document.createElement('td');
+                orderAmountEl.textContent = order.amount;
+                orderInfoRowEl.appendChild(orderAmountEl);
+
+                const orderBookCostEl = document.createElement('td');
+                orderBookCostEl.textContent = order.bookCost;
+                orderInfoRowEl.appendChild(orderBookCostEl);
+
+            }
+        }
+    </script>
+}

@@ -1,0 +1,244 @@
+﻿@{
+    ViewData["Title"] = "Продукция";
+    Layout = "~/Views/Admin/_LayoutAdmin.cshtml";
+    var message = ViewData["Message"];
+    List<iBook.tj.ViewModels.ProductViewModel> listOfBooks = ViewBag.listOfBooks;
+    List<iBook.tj.Models.Category> categoryList = ViewBag.categoryList;
+}
+<h5 style="margin-bottom:50px;">Продукты</h5>
+<div id="root">
+    @if (message != null)
+    {
+        string messageString = message.ToString();
+
+        if (messageString.ToLower().Contains("успешно"))
+        {
+            <span class="text-success">@messageString</span>
+        }
+        else
+        {
+            <span class="text-danger">@messageString</span>
+        }
+    }
+
+    @if (categoryList != null)
+    {
+        <div class="container">
+            <form method="post">
+                <select class="custom-select" id="admin-view-by-category">
+                    <option value="-1">Категория</option>
+                    <option value="-2">Все книги</option>
+                    @foreach (var category in categoryList)
+                    {
+                        <option value="@category.Id">@category.CategoryName</option>
+                    }
+                </select>
+            </form>
+        </div>
+    }
+    @if (listOfBooks != null)
+    {
+        <div class="col-12">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">#ID</th>
+                            <th></th>
+                            <th scope="col">Книга</th>
+                            <th scope="col">Категория</th>
+                            <th scope="col">Кол-во</th>
+                            <th scope="col">Цена</th>
+                            <th scope="col"></th>
+                            <th> </th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-table">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+
+        getCategory(-2);
+
+        $("#admin-view-by-category").on("change", function () {
+            const id = $(this).children("option:selected").val();
+            getCategory(id);
+        });
+        function getCategory(id) {
+            $.ajax({
+                type: "GET",
+                url: `/Admin/GetByCategory/${id}`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (result, status, xhr) {
+
+                    const productTableBodyEl = document.getElementById('product-table');
+                    productTableBodyEl.innerHTML = '';
+                    for (let i = 0; i < result.length; i++) {
+                        const book = result[i];
+
+                        const tableRowEl = document.createElement('tr');
+                        tableRowEl.dataset.bookId = book.id;
+                        tableRowEl.dataset.type = 'bookRow';
+
+                        const idColEl = document.createElement('td');
+                        idColEl.textContent = book.id;
+                        tableRowEl.appendChild(idColEl);
+
+                        const imageColEl = document.createElement('td');
+                        tableRowEl.appendChild(imageColEl);
+
+                        const imageEl = document.createElement('img');
+                        imageEl.height = 50;
+                        imageEl.width = 50;
+                        imageEl.src = '/images/' + book.imageLink;
+                        imageColEl.appendChild(imageEl);
+
+                        const titleEl = document.createElement('td');
+                        titleEl.textContent = book.title;
+                        tableRowEl.appendChild(titleEl);
+
+                        const categoryNameEl = document.createElement('td');
+                        categoryNameEl.textContent = book.categoryName;
+                        tableRowEl.appendChild(categoryNameEl);
+
+                        const amountContainerEl = document.createElement('td');
+                        amountContainerEl.textContent = 'шт'; 
+                        tableRowEl.appendChild(amountContainerEl);
+
+                        const amountEl = document.createElement('input');
+                        amountEl.value = book.amount;
+                        amountEl.dataset.id = 'amount';
+                        amountEl.type = 'number';
+                        amountContainerEl.insertBefore(amountEl, amountContainerEl.firstChild);
+
+
+                        const costEl = document.createElement('td');
+                        costEl.textContent = book.bookCost + 'с.';
+                        tableRowEl.appendChild(costEl);
+
+                        const buttonDeleteContainerEl = document.createElement('td');
+                        buttonDeleteContainerEl.className = 'text-right';
+                        tableRowEl.appendChild(buttonDeleteContainerEl);
+
+                        const buttonDeleteEl = document.createElement('button');
+                        buttonDeleteEl.className = 'btn btn-sm btn-danger';
+                        buttonDeleteEl.dataset.action = 'delete';
+                        buttonDeleteContainerEl.appendChild(buttonDeleteEl);
+
+                        const buttonDeleteIconEl = document.createElement('i');
+                        buttonDeleteIconEl.className = 'fa fa-trash';
+                        buttonDeleteIconEl.dataset.action = 'delete';
+                        buttonDeleteEl.appendChild(buttonDeleteIconEl);
+
+                        const buttonEditContainerEl = document.createElement('td');
+                        buttonEditContainerEl.className = 'text-right';
+                        tableRowEl.appendChild(buttonEditContainerEl);
+
+                        const buttonEditEl = document.createElement('button');
+                        buttonEditEl.className = 'btn btn-sm btn-primary';
+                        buttonEditEl.dataset.action = 'edit';
+                        buttonEditContainerEl.appendChild(buttonEditEl);
+
+                        const buttonEditIconEl = document.createElement('i');
+                        buttonEditIconEl.className = 'fa fa-edit';
+                        buttonEditIconEl.dataset.action = 'edit';
+                        buttonEditEl.appendChild(buttonEditIconEl);
+
+
+                        productTableBodyEl.appendChild(tableRowEl);
+
+                        tableRowEl.addEventListener('click', evt => {
+                            if (evt.target.dataset.id != 'amount') {
+                                return; 
+                            }
+                            const bookId = evt.currentTarget.dataset.bookId;
+                            amountEl.onchange = (ev) => {
+                                const amountValue = amountEl.value;
+                                updateAmountOfBook(amountValue, bookId);
+                            };
+                        });
+
+                        tableRowEl.addEventListener('click',evt => {
+                            if (evt.target.dataset.action != 'delete') {
+                                return;
+                            }
+                            deleteRow(evt.currentTarget.dataset.bookId, tableRowEl);
+                        });
+                        tableRowEl.addEventListener('click',evt => {
+                            if (evt.target.dataset.action != 'edit') {
+                                return;
+                            }
+                            window.location.href = `/Admin/EditProduct/${book.id}`;
+                            
+                        });
+
+                    }
+                },
+                error: function (xhr, status, error) {
+                    if (xhr['status'] >= 400) {
+                        document.getElementById('product-table').innerHTML = '';
+                    }
+                },
+            });
+        }
+        function deleteRow(id, tableRow) {
+            $.ajax({
+                type: "DELETE",
+                url: `/Admin/DeleteBook/${id}`,
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(id),
+                dataType: "json",
+                success: function (result, status, xhr) {
+                    if (result.success == 'done') {
+                        console.log(result.success);
+                        const productTableBodyEl = document.getElementById('product-table');
+                        productTableBodyEl.removeChild(tableRow);
+
+                        const rootEl = document.getElementById('root');
+                        const messageEl = document.createElement('span');
+                        messageEl.className = 'text-success';
+                        messageEl.textContent = 'Книга удалена';
+                        rootEl.insertBefore(messageEl, rootEl.firstChild);
+                        setTimeout(() => {
+                            rootEl.removeChild(messageEl);
+                        }, 3000);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    const rootEl = document.getElementById('root');
+                    const messageEl = document.createElement('span');
+                    messageEl.className = 'text-danger';
+                    messageEl.textContent = 'Книга не удалена. Произошла ошибка';
+                    rootEl.insertBefore(messageEl, rootEl.firstChild);
+                    setTimeout(() => {
+                        rootEl.removeChild(messageEl);
+                    }, 3000);
+                },
+            });
+        }
+        function updateAmountOfBook(amountValue, id) {
+            console.log(id);
+            $.ajax({
+                type: "PUT",
+                url: `/Admin/UpdateAmount/${id}`,
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(amountValue),
+                dataType: "json",
+                success: function (result, status, xhr) {
+
+                },
+                error: function (xhr, status, error) {
+
+                },
+            });
+        }
+
+    </script>
+}

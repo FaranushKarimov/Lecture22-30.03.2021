@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Migrations\20200604055648_AddedNameForUser.cs" />
+    <Compile Remove="Migrations\20200604055648_AddedNameForUser.Designer.cs" />
+    <Compile Remove="Migrations\20200604073630_ChangedUserTable.cs" />
+    <Compile Remove="Migrations\20200604073630_ChangedUserTable.Designer.cs" />
+    <Compile Remove="Migrations\20200609015557_BookCategoryAddition.cs" />
+    <Compile Remove="Migrations\20200609015557_BookCategoryAddition.Designer.cs" />
+    <Compile Remove="Migrations\20200609024057_BookColumnChange.cs" />
+    <Compile Remove="Migrations\20200609024057_BookColumnChange.Designer.cs" />
+    <Compile Remove="Migrations\20200609104912_BookCategoryAddition.cs" />
+    <Compile Remove="Migrations\20200609104912_BookCategoryAddition.Designer.cs" />
+    <Compile Remove="Migrations\20200609104949_BookCategoryAddition.cs" />
+    <Compile Remove="Migrations\20200609104949_BookCategoryAddition.Designer.cs" />
+    <Compile Remove="Migrations\20200609105230_AddedModels.cs" />
+    <Compile Remove="Migrations\20200609105230_AddedModels.Designer.cs" />
+    <Compile Remove="Migrations\20200610091917_BookRequireMessageAddition.cs" />
+    <Compile Remove="Migrations\20200610091917_BookRequireMessageAddition.Designer.cs" />
+    <Compile Remove="Migrations\20200615052145_AddedCartItem.cs" />
+    <Compile Remove="Migrations\20200615052145_AddedCartItem.Designer.cs" />
+    <Compile Remove="Migrations\20200615063627_ChangedCartItem.cs" />
+    <Compile Remove="Migrations\20200615063627_ChangedCartItem.Designer.cs" />
+    <Compile Remove="Migrations\20200615063903_AddedCartItem.cs" />
+    <Compile Remove="Migrations\20200615063903_AddedCartItem.Designer.cs" />
+    <Compile Remove="Migrations\20200615064337_AddedCartItem.cs" />
+    <Compile Remove="Migrations\20200615064337_AddedCartItem.Designer.cs" />
+    <Compile Remove="Migrations\20200615065847_AddedCartItem.cs" />
+    <Compile Remove="Migrations\20200615065847_AddedCartItem.Designer.cs" />
+    <Compile Remove="Migrations\20200615172808_RequiredFieldInCartItem.cs" />
+    <Compile Remove="Migrations\20200615172808_RequiredFieldInCartItem.Designer.cs" />
+    <Compile Remove="Migrations\20200615173114_AddedCascadeDelete.cs" />
+    <Compile Remove="Migrations\20200615173114_AddedCascadeDelete.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.1.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.1.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\images\" />
+  </ItemGroup>
+
+</Project>

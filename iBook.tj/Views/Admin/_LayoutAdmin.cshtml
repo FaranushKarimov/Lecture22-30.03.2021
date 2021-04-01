@@ -1,0 +1,41 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var route = ViewContext.RouteData.Values;
+    var action = route["action"].ToString().ToLower();
+}
+
+@if (action == "products" || action == "productaddition" || action == "categoryaddition" || action == "editproduct")
+{
+    <div>
+        <h4>Управление продукцией</h4>
+        <hr />
+        <div class="row">
+            <div class="col-md-3">
+                <partial name="_ProductManageNav" />
+            </div>
+            <div class="col-md-9">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+}
+@if (action == "users" || action == "usersaddition")
+{
+    <div>
+        <h4>Управление пользователями</h4>
+        <hr />
+        <div class="row">
+            <div class="col-md-3">
+                <partial name="_AdminUsersManageNav" />
+            </div>
+            <div class="col-md-9">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+}
+
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}

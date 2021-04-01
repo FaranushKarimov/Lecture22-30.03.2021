@@ -1,0 +1,35 @@
+﻿@{
+
+    ViewData["Title"] = "Добавление новой категории";
+    Layout = "~/Views/Admin/_LayoutAdmin.cshtml";
+    var message = ViewBag.CategoryErrorMessage;
+    var categoryList = ViewBag.CategoryList; 
+}
+@model iBook.tj.Models.Category
+
+<h4>Новая категория</h4>
+<hr />
+<div class="container">
+    @if ( message != null)
+    {
+        <span class="text-danger">@message</span>
+    }
+    <form method="post" asp-action="AddCategory">
+        <div class="form-group">
+            <label style="width:30%; margin-right:10%;" for="CategoryName">Название Категории</label>
+            <input style="width:60%;" type="text" asp-for="CategoryName"/>
+        </div>
+        <button class="btn btn-primary">Добавить</button>
+    </form>
+</div>
+
+<div class="container">
+    @if ( categoryList != null)
+    {
+        @foreach( var category in categoryList)
+        {
+
+        }
+    }
+</div>
+

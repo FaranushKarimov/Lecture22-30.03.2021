@@ -1,0 +1,95 @@
+﻿@{
+    var username = User.Identity.Name;
+    ViewData["Title"] = "Книга";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    iBook.tj.ViewModels.ProductViewModel product = ViewBag.product; 
+}
+<input type="hidden" id="username" value="@username"/>
+<div id="product-container" product-id="@product.Id" style="width:100%;">
+    <div class="left-column">
+        <img src="/images/@product.ImageLink" />
+    </div>
+
+    <div class="right-column">
+
+        <div class="product-description">
+            <span id="category">@product.CategoryName</span>
+            <span id="year">Год: @product.YearOfPublishing</span>
+            <h1 id="name">@product.Title</h1>
+            <h5 id="author">Автор: @product.Author</h5>
+            <p id="description">@product.Description</p>
+        </div>
+
+        <div id="product-price" class="product-price">
+            <span id="price">@product.BookCost c.</span>
+            <div style="display:inline-flex; width:20%;">
+                <input id="amount" type="number" style="width:90%;"  value="1" /> шт.
+            </div>
+            <button id="add" class="cart-btn">В Корзину</button>
+            <span class="text-danger" id="message"></span>
+        </div>
+
+    </div>
+</div>
+@section Scripts{ 
+    <script type="text/javascript">
+        const productContainerEl = document.getElementById('product-container');
+        console.log(productContainerEl);
+        const productId = productContainerEl.getAttribute('product-id'); 
+
+        console.log(productId);
+
+        const username = document.getElementById('username').value;
+        const amount = document.getElementById('amount');
+        const productPriceContainer = document.getElementById('product-price');
+
+        const message = document.getElementById('message');
+
+        const buttonAddToCartEl = document.getElementById('add');
+        buttonAddToCartEl.onclick = evt => {
+            const timeToHideMessage = 1500;
+            const user = {
+                id: productId,
+                username: username,
+                bookamount: amount.value,
+            };
+            $.ajax({
+                type: 'POST',
+                url: `/Home/AddToCart`,
+                data: JSON.stringify(user),
+                dataType: 'json',
+                async: true,
+                success: function (result, status, xhr) {
+                    if (result.success == 'register') {
+                        message.textContent = 'Необходимо зарегистрироваться или войти в аккаунт';
+                        message.className = 'text-danger';
+                        message.style.fontSize = 'small';
+                        message.style.display = 'block';
+                        setTimeout(() => {
+                            message.style.display = 'none';
+                        }, timeToHideMessage);
+                    }
+                    else {
+                        message.className = 'text-success';
+                        message.style.display = 'block';
+                        message.textContent = 'Добавлено в корзину';
+                        setTimeout(() => {
+                            message.style.display = 'none';
+                        }, timeToHideMessage);
+                        amount.value = 1; 
+                    }
+                },
+                error: function (xhr, status, error) {
+                    message.className = 'text-danger';
+                    message.style.display = 'block';
+                    message.textContent = `Произошла ошибка:${xhr.statusText}`;
+                    setTimeout(() => {
+                        message.style.display = 'none';
+                    }, timeToHideMessage);
+                },
+            });
+        };
+
+
+    </script>
+}

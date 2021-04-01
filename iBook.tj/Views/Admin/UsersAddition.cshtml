@@ -1,0 +1,159 @@
+﻿@model iBook.tj.ViewModels.UserViewModel;
+@{
+    ViewData["Title"] = "Добавление нового пользователя";
+    Layout = "~/Views/Admin/_LayoutAdmin.cshtml";
+    var messageError = ViewBag.ErrorMessage; 
+}
+
+    <fieldset id="register-fieldset">
+        <form method="post" id="form-register">
+            @if (messageError != null)
+            {
+                <div asp-validation-summary="All" class="text-danger">@messageError</div>
+            }
+            <div asp-validation-summary="All" class="text-danger" id="message"></div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="FirstName"></label>
+                        <input asp-for="FirstName" class="form-control" id="firstname" />
+                        <span asp-validation-for="FirstName" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="LastName"></label>
+                        <input asp-for="LastName" class="form-control" id="lastname" />
+                        <span asp-validation-for="LastName" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="form-control" id="email" type="email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Password"></label>
+                        <input asp-for="Password" class="form-control" id="password" type="password" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="ConfirmPassword"></label>
+                        <input asp-for="ConfirmPassword" class="form-control" id="confirm-password" type="password" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Регистрация</button>
+        </form>
+    </fieldset>
+
+@section scripts{ 
+    <script type="text/javascript">
+        const formEl = $('#form-register');
+        formEl.on('submit', function (evt) {
+            evt.preventDefault();
+            const firstname = $("#firstname");
+            const lastname = $("#lastname");
+            const email = $("#email");
+            const password = $("#password");
+            const confirmPassword = $("#confirm-password");
+            const message = document.getElementById("message");
+            const registeFirstset = document.getElementById('register-fieldset');
+
+            const firstnameValue = firstname.val().trim();
+            const lastnameValue = lastname.val().trim();
+            const emailValue = email.val().trim();
+            const passwordValue = password.val();
+            const confirmPasswordValue = confirmPassword.val();
+
+            if (firstnameValue === '') {
+                firstname.focus();
+                message.textContent = "Поля должны быть заполнены";
+                message.className = 'text-danger';
+                return;
+            }
+            if (lastnameValue === '') {
+                message.textContent = "Поля должны быть заполнены";
+                lastname.focus();
+                message.className = 'text-danger';
+                return;
+            }
+            if (emailValue === '') {
+                message.textContent = "Поля должны быть заполнены";
+                email.focus();
+                message.className = 'text-danger';
+                return;
+            }
+            if (passwordValue.length < 6) {
+                message.textContent = "Пароль должен быть не менее 6 символов";
+                message.className = 'text-danger';
+                return;
+            }
+            if (passwordValue !== confirmPasswordValue) {
+                message.textContent = "Пароли должны совпадать";
+                message.className = 'text-danger';
+                password.focus();
+                return;
+            }
+            message.textContent = '';
+            
+            const user_data = {
+                user_firstname: firstnameValue,
+                user_lastname: lastnameValue,
+                user_password: passwordValue,
+                user_email: emailValue,
+            };
+            registeFirstset.disabled = true;
+            $.ajax({
+                async: true,
+                type: "POST",
+                url: `/Admin/AddUser`,
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(user_data),
+                dataType: "json",
+                success: function (result, status, xhr) {
+                    if (result == 'success') {
+                        message.className = 'text-success';
+                        message.textContent = 'Зарегистрирован';
+                        setTimeout(() => {
+                            message.textContent = '';
+                            message.className = 'text-danger';
+                        }, 2000);
+                    }
+                    if (result == 'User exists') {
+                        message.className = 'text-danger';
+                        message.textContent = 'Пользователь с таким email существует';
+                        setTimeout(() => {
+                            message.textContent = '';
+                            message.className = 'text-danger';
+                        }, 2000);
+                    }
+                    if (result == 'failed') {
+                        message.className = 'text-danger';
+                        message.textContent = 'Произошла ошибка';
+                        setTimeout(() => {
+                            message.textContent = '';
+                            message.className = 'text-danger';
+                        }, 2000);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    message.className = 'text-danger';
+                    message.textContent = 'Произошла ошибка';
+                    setTimeout(() => {
+                        message.textContent = '';
+                        message.className = 'text-danger';
+                    }, 2000);
+                },
+            });
+            registeFirstset.disabled = false;
+
+        });
+    </script>
+}

@@ -1,0 +1,518 @@
+﻿@{ 
+    var username = User.Identity.Name;
+    ViewData["Title"] = "Корзина|-iBook.tj";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div id="root">
+    <input type="hidden" value="@username" id="username"/>
+    <div id="container">
+        <div class="container" id="cart-container">
+            <h5 class="text-dark">Корзина</h5>
+            <span id="message"></span>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th></th>
+                            <th scope="col">Книга</th>
+                            <th scope="col">Автор</th>
+                            <th scope="col">Категория</th>
+                            <th scope="col">Кол-во</th>
+                            <th scope="col">Цена</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-table">
+                    </tbody>
+                </table>
+            </div>
+            <div id="sum-container" style="float:right; width:40%;">
+                <h6>Ваш заказ</h6>
+                <hr />
+                <div>
+                    <table class="table-borderless table-responsive table-hover">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="sum-table">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="container" id="order-container" style="display:none;">
+            <span id="message-order"></span>
+        </div>
+    </div>
+
+</div>
+@section Scripts{
+    <script type="text/javascript">
+
+        const username = document.getElementById('username').value;
+        const productsTableEl = document.getElementById('product-table');
+
+        const books = [];
+        let booksAmount = 0, costSum = 0, booksSum = 0, cartid = 0;
+
+        getCartItem();
+
+        function getCartItem() {
+            $.ajax({
+                type: 'GET',
+                url: `/Home/GetCartItems/${username}`,
+                dataType: 'json',
+                async: true,
+                success: function (result, status, xhr) {
+                    showCartTable(result);
+                },
+                error: function (xhr, status, error) {
+
+                },
+            });
+        }
+
+        function showCartTable(cartItems) {
+            let cartItemNumber = 1;
+            for (let i = 0; i < cartItems.length; i++) {
+                const cart = cartItems[i];
+
+                cartid = cart.cartItemId;
+
+                books.push(cart);
+
+                const tableRowEl = document.createElement('tr');
+                tableRowEl.dataset.cartItemId = cart.cartItemId;
+                productsTableEl.appendChild(tableRowEl);
+
+                const cartItemNumberEl = document.createElement('td');
+                cartItemNumberEl.dataset.id = 'number';
+                tableRowEl.appendChild(cartItemNumberEl);
+                cartItemNumberEl.textContent = cartItemNumber++;
+
+                const imageContainerEl = document.createElement('td');
+                imageContainerEl.width = '50';
+                imageContainerEl.height = '50';
+                tableRowEl.appendChild(imageContainerEl);
+
+                const bookImageEl = document.createElement('img');
+                bookImageEl.width = '50';
+                bookImageEl.height = '50';
+                bookImageEl.src = '/images/' + cart.imageLink;
+                imageContainerEl.appendChild(bookImageEl);
+
+                const bookTitleEl = document.createElement('td');
+                bookTitleEl.textContent = cart.bookName;
+                tableRowEl.appendChild(bookTitleEl);
+
+                const bookAuthorEl = document.createElement('td');
+                bookAuthorEl.textContent = cart.bookAuthor;
+                tableRowEl.appendChild(bookAuthorEl);
+
+                const bookCategoryEl = document.createElement('td');
+                bookCategoryEl.textContent = cart.categoryName;
+                tableRowEl.appendChild(bookCategoryEl);
+
+                const bookAmountContainerEl = document.createElement('td');
+                bookAmountContainerEl.style.width = '15%';
+                bookAmountContainerEl.textContent = ' шт.';
+                tableRowEl.appendChild(bookAmountContainerEl);
+
+                const bookAmountInputEl = document.createElement('input');
+                bookAmountInputEl.value = cart.amount;
+                bookAmountInputEl.dataset.id = 'amount-input';
+                bookAmountInputEl.type = 'number';
+                bookAmountInputEl.style.width = '70%';
+                bookAmountInputEl.min = '1';
+                bookAmountContainerEl.insertBefore(bookAmountInputEl, bookAmountContainerEl.firstChild);
+
+                const bookCostEl = document.createElement('td');
+                bookCostEl.textContent = cart.bookCost + ' c.';
+                tableRowEl.appendChild(bookCostEl);
+
+                const buttonDeleteContainerEl = document.createElement('td');
+                buttonDeleteContainerEl.className = 'text-right';
+                tableRowEl.appendChild(buttonDeleteContainerEl);
+
+                const buttonDeleteEl = document.createElement('button');
+                buttonDeleteEl.className = 'btn btn-sm btn-danger';
+                buttonDeleteEl.dataset.action = 'delete';
+                buttonDeleteContainerEl.appendChild(buttonDeleteEl);
+
+                const buttonDeleteIconEl = document.createElement('i');
+                buttonDeleteIconEl.className = 'fa fa-trash';
+                buttonDeleteIconEl.dataset.action = 'delete';
+                buttonDeleteEl.appendChild(buttonDeleteIconEl);
+
+                tableRowEl.addEventListener('click', evt => {
+                    if (evt.target.dataset.action != 'delete') {
+                        return;
+                    }
+                    const cartItemId = evt.currentTarget.dataset.cartItemId
+                    deleteItem(cartItemId, tableRowEl, productsTableEl);
+                });
+
+                tableRowEl.addEventListener('click', ev => {
+                    if (ev.target.dataset.id !== 'amount-input') {
+                        return;
+                    }
+                    const cartItemId = ev.currentTarget.dataset.cartItemId;
+                    bookAmountInputEl.onchange = evt => {
+                        if (evt.currentTarget.value < 1 || evt.currentTarget.value == '') {
+                            evt.currentTarget.value = 1;
+                        }
+                        const cartItem = {
+                            id: Number(cartItemId),
+                            username: username,
+                            bookamount: Number(evt.currentTarget.value),
+                        };
+                        $.ajax({
+                            type: 'POST',
+                            url: `/Home/UpdateOrderAmount`,
+                            data: JSON.stringify(cartItem),
+                            dataType: 'json',
+                            success: function (result, status, xhr) {
+                                if (result.success === 'done') {
+                                    const message = document.getElementById('message');
+                                    message.textContent = 'Изменения сохранены';
+                                    message.className = 'text-success';
+                                    message.style.display = 'block';
+                                    const timeToHideMessage = 1500;
+                                    setTimeout(() => {
+                                        message.style.display = 'none';
+                                    }, timeToHideMessage);
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                const message = document.getElementById('message');
+                                message.textContent = `Ошибка, изменения не сохранены.
+                                                                        Попробуйте перезагрузить.`;
+                                message.className = 'text-danger';
+                                message.style.display = 'block';
+                                const timeToHideMessage = 1500;
+                                setTimeout(() => {
+                                    message.style.display = 'none';
+                                }, timeToHideMessage);
+                            },
+                        });
+                    };
+                });
+
+            }
+            updateSumTable();
+        }
+
+        function deleteItem(id, child, parent) {
+            const messageEl = document.getElementById('message');
+            const timeToHideMessage = 1500;
+            $.ajax({
+                type: 'DELETE',
+                url: `/Home/DeleteCartItem/${id}`,
+                dataType: 'json',
+                async: true,
+                success: function (result, status, xhr) {
+                    books = books.filter(b => b.cartItemId != id);
+                    if (result.success === 'done') {
+                        parent.removeChild(child);
+                        messageEl.style.display = 'block';
+                        messageEl.textContent = 'Заказ удален';
+                        messageEl.className = 'text-success';
+                        setTimeout(() => {
+                            messageEl.style.display = 'none';
+                        }, timeToHideMessage);
+                        updateResults();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    messageEl.style.display = 'block';
+                    messageEl.textContent = 'Ошибка при удалении';
+                    messageEl.className = 'text-danger';
+                    setTimeout(() => {
+                        messageEl.style.display = 'none';
+                    }, timeToHideMessage);
+                },
+            });
+        }
+
+        function updateResults() {
+            const bookRows = productsTableEl.childNodes;
+            let bookNumberValue = 1;
+            for (let i = 0; i < bookRows.length; i++) {
+                const bookRow = bookRows[i];
+                if (bookRow.firstChild !== null) {
+                    const bookNumber = bookRow.firstChild;
+                    bookNumber.textContent = bookNumberValue++;
+                }
+            }
+            updateSumTable();
+        }
+
+        function updateSumTable() {
+
+            const sumTable = document.getElementById('sum-table');
+            const sumContainerEl = document.getElementById('sum-container');
+
+            const amountOfBooks = books.length;
+            booksAmount = amountOfBooks;
+
+            sumTable.innerHTML = '';
+
+            books.forEach(b => {
+                costSum += (b.bookCost * b.amount);
+                booksSum += b.amount;
+            });
+
+            const sumOfBooksContainerEl = document.createElement('tr');
+            sumTable.appendChild(sumOfBooksContainerEl);
+
+            const amountOfBooksContainerEl = document.createElement('td');
+            sumOfBooksContainerEl.appendChild(amountOfBooksContainerEl);
+
+            const amountOfBooksEl = document.createElement('span');
+            amountOfBooksEl.textContent = booksSum;
+            amountOfBooksContainerEl.appendChild(amountOfBooksEl);
+
+            const amountOfBooksTextEl = document.createElement('span');
+            amountOfBooksTextEl.textContent = ' книг на сумму';
+            if (booksSum == 1) {
+                amountOfBooksTextEl.textContent = ' книга на сумму';
+            }
+            if (booksSum > 1 && booksSum < 5) {
+                amountOfBooksTextEl.textContent = ' книги на сумму';
+            }
+            amountOfBooksContainerEl.appendChild(amountOfBooksTextEl);
+
+            const bookCostContainerEl = document.createElement('td');
+
+            bookCostContainerEl.textContent = costSum + ' c.';
+            sumOfBooksContainerEl.appendChild(bookCostContainerEl);
+
+            const buttonBuyEl = document.createElement('button');
+            buttonBuyEl.textContent = 'Оформить';
+            buttonBuyEl.style.marginTop = '20px';
+            buttonBuyEl.style.float = 'right';
+            buttonBuyEl.className = 'btn btn-outline-dark'
+            sumContainerEl.appendChild(buttonBuyEl);
+
+
+            buttonBuyEl.addEventListener('click', evt => {
+                const orderContainerEl = document.getElementById('order-container');
+                const cartContainerEl = document.getElementById('cart-container');
+                cartContainerEl.style.display = 'none';
+                orderContainerEl.style.display = 'block';
+                orderViewModelLoader();
+            });
+        }
+        function orderViewModelLoader() {
+            const orderContainerEl = document.getElementById('order-container');
+            const orderFormEl = document.createElement('form');
+            orderFormEl.dataset.id = 'order-form';
+            orderContainerEl.appendChild(orderFormEl);
+
+            const orderNameInputContainerEl = document.createElement('div');
+            orderNameInputContainerEl.className = 'form-group';
+            orderNameInputContainerEl.style.width = '100%';
+            orderNameInputContainerEl.style.display = 'flex';
+            orderFormEl.appendChild(orderNameInputContainerEl);
+
+            const orderNameLabelEl = document.createElement('label');
+            orderNameLabelEl.style.width = '40%';
+            orderNameLabelEl.htmlFor = 'name';
+            orderNameLabelEl.textContent = 'Имя получателя';
+            orderNameInputContainerEl.appendChild(orderNameLabelEl);
+
+            const orderNameInputEl = document.createElement('input');
+            orderNameInputEl.dataset.id = 'name-input';
+            orderNameInputEl.style.width = '60%';
+            orderNameInputEl.className = 'form-control';
+            orderNameInputEl.name = 'name';
+            orderNameInputEl.type = 'text';
+            orderNameInputContainerEl.appendChild(orderNameInputEl);
+
+            const orderAddressContainerEl = document.createElement('div');
+            orderAddressContainerEl.className = 'form-group';
+            orderAddressContainerEl.style.width = '100%';
+            orderAddressContainerEl.style.display = 'flex';
+            orderFormEl.appendChild(orderAddressContainerEl);
+
+            const orderAddressLabelEl = document.createElement('label');
+            orderAddressLabelEl.style.width = '40%';
+            orderAddressLabelEl.htmlFor = 'address';
+            orderAddressLabelEl.textContent = 'Адрес получателя';
+            orderAddressContainerEl.appendChild(orderAddressLabelEl);
+
+            const orderAddressInputEl = document.createElement('input');
+            orderAddressInputEl.dataset.id = 'address-input';
+            orderAddressInputEl.style.width = '60%';
+            orderAddressInputEl.className = 'form-control';
+            orderAddressInputEl.name = 'address';
+            orderAddressInputEl.type = 'text';
+            orderAddressContainerEl.appendChild(orderAddressInputEl);
+
+            const orderPhoneNumberContainerEl = document.createElement('div');
+            orderPhoneNumberContainerEl.className = 'form-group';
+            orderPhoneNumberContainerEl.style.width = '100%';
+            orderPhoneNumberContainerEl.style.display = 'flex';
+            orderFormEl.appendChild(orderPhoneNumberContainerEl);
+
+            const orderPhoneNumberLabelEl = document.createElement('label');
+            orderPhoneNumberLabelEl.style.width = '40%';
+            orderPhoneNumberLabelEl.htmlFor = 'phone';
+            orderPhoneNumberLabelEl.textContent = 'Номер телефона';
+            orderPhoneNumberContainerEl.appendChild(orderPhoneNumberLabelEl);
+
+            const orderPhoneNumberInputEl = document.createElement('input');
+            orderPhoneNumberInputEl.dataset.id = 'phone-input';
+            orderPhoneNumberInputEl.style.width = '60%';
+            orderPhoneNumberInputEl.className = 'form-control';
+            orderPhoneNumberInputEl.name = 'phone';
+            orderPhoneNumberInputEl.type = 'text';
+            orderPhoneNumberContainerEl.appendChild(orderPhoneNumberInputEl);
+
+            const line = document.createElement('hr');
+            orderFormEl.appendChild(line);
+
+            const orderInfoContainerEl = document.createElement('div');
+            orderInfoContainerEl.className = 'form-group';
+            orderInfoContainerEl.style.display = 'block';
+            orderInfoContainerEl.style.width = '50%';
+            orderFormEl.appendChild(orderInfoContainerEl);
+
+            const orderBookAmountContainerEl = document.createElement('div');
+            orderInfoContainerEl.appendChild(orderBookAmountContainerEl);
+
+            const orderBookAmountTextEl = document.createElement('p');
+            orderBookAmountTextEl.className = 'text-info';
+            orderBookAmountTextEl.textContent = 'Число книг: ';
+            orderBookAmountContainerEl.appendChild(orderBookAmountTextEl);
+
+            const orderBookAmountEl = document.createElement('span');
+            orderBookAmountEl.dataset.id = 'book-amount';
+            orderBookAmountEl.textContent = booksSum;
+            orderBookAmountTextEl.appendChild(orderBookAmountEl);
+            orderBookAmountTextEl.textContent += ' шт.';
+
+            const orderBookCostContainer = document.createElement('div');
+            orderInfoContainerEl.appendChild(orderBookCostContainer);
+
+            const orderBookCostTextEl = document.createElement('p');
+            orderBookCostTextEl.className = 'text-info';
+            orderBookCostTextEl.textContent = 'Сумма заказа: ';
+            orderBookCostContainer.appendChild(orderBookCostTextEl);
+
+            const orderBookCostEl = document.createElement('span');
+            orderBookCostEl.dataset.id = 'order-amount';
+            orderBookCostEl.textContent = costSum;
+            orderBookCostTextEl.appendChild(orderBookCostEl);
+            orderBookCostTextEl.textContent += ' c.';
+
+            const orderPaymentContainerEl = document.createElement('div');
+            orderInfoContainerEl.appendChild(orderPaymentContainerEl);
+
+            const orderPayment = document.createElement('input');
+            orderPayment.type = 'checkbox';
+            orderPayment.style.display = 'inline-flex';
+            orderPaymentContainerEl.appendChild(orderPayment);
+
+            const orderPaymentText = document.createElement('p');
+            orderPaymentText.style.marginLeft = '10px';
+            orderPaymentText.style.display = 'inline-flex';
+            orderPaymentText.textContent = 'Оплатить при доставке';
+            orderPaymentContainerEl.appendChild(orderPaymentText);
+
+            const orderOnlinePaymentContainerEl = document.createElement('div');
+            orderInfoContainerEl.appendChild(orderOnlinePaymentContainerEl);
+
+            const orderOnlinePaymentEl = document.createElement('input');
+            orderOnlinePaymentEl.type = 'checkbox';
+            orderOnlinePaymentEl.disabled = 'disabled';
+            orderOnlinePaymentEl.style.display = 'inline-flex';
+            orderOnlinePaymentContainerEl.appendChild(orderOnlinePaymentEl);
+
+            const orderOnlinePaymentText = document.createElement('p');
+            orderOnlinePaymentText.style.marginLeft = '10px';
+            orderOnlinePaymentText.style.display = 'inline-flex';
+            orderOnlinePaymentText.textContent = 'Оплатить Онлайн';
+            orderOnlinePaymentContainerEl.appendChild(orderOnlinePaymentText);
+
+
+            const orderButtonSubmitContainerEl = document.createElement('div');
+            orderInfoContainerEl.appendChild(orderButtonSubmitContainerEl);
+
+            const orderButtonSubmitEl = document.createElement('button')
+            orderButtonSubmitEl.dataset.id = 'order-button';
+            orderButtonSubmitEl.className = 'btn btn-success';
+            orderButtonSubmitEl.textContent = 'Заказать';
+            orderButtonSubmitContainerEl.appendChild(orderButtonSubmitEl);
+
+            orderFormEl.onsubmit = evt => {
+                evt.preventDefault();
+                const message = document.getElementById('message-order');
+                const nameValue = orderNameInputEl.value.trim();
+                const phoneNumberValue = orderPhoneNumberInputEl.value.trim();
+                const addressValue = orderAddressInputEl.value.trim();
+                const timeToHideMessage = 1500;
+
+                if (addressValue === '' || phoneNumberValue === '' || nameValue === '') {
+                    message.className = 'text-danger'
+                    message.style.display = 'block';
+                    message.textContent = 'Поля должны быть заполнены';
+                    setTimeout(() => {
+                        message.style.display = 'none';
+                    }, timeToHideMessage);
+                    return;
+                }
+                const userData = {
+                    username: username,
+                    name: nameValue,
+                    address: addressValue,
+                    phone: phoneNumberValue,
+                    cost: costSum,
+                    amount: booksSum,
+                    cartitem: cartid,
+                }
+                if (cartid != 0) {
+                    addOrder(userData);
+                }
+                else {
+                    message.className = 'text-danger'
+                    message.style.display = 'block';
+                    message.textContent = 'Нечего добавить';
+                    setTimeout(() => {
+                        message.style.display = 'none';
+                    }, timeToHideMessage);
+                }
+            };
+        }
+        function addOrder(userData) {
+            const timeToHideMessage = 1500;
+            const message = document.getElementById('message-order');
+            $.ajax({
+                type: 'POST',
+                url: '/Home/AddOrder',
+                data: JSON.stringify(userData),
+                dataType: 'json',
+                success: function (result, status, xhr) {
+                    if (result.success === 'done') {
+                        window.location.href = `/Home/Orders`;
+                    }
+                },
+                error: function (xhr, status, error) {
+                    message.className = 'text-danger'
+                    message.style.display = 'block';
+                    message.textContent = 'Произошла ошибка';
+                    setTimeout(() => {
+                        message.style.display = 'none';
+                    }, timeToHideMessage);
+                }
+            });
+        }
+    </script>
+ }

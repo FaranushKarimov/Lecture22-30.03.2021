@@ -1,0 +1,87 @@
+﻿@model iBook.tj.ViewModels.BookViewModel;
+@{
+    ViewData["Title"] = "Изменение книги";
+    Layout = "~/Views/Admin/_LayoutAdmin.cshtml";
+    var categoryList = ViewBag.categoryList;
+    var book = ViewBag.editProductItem;
+    var categoryError = ViewData["ErrorMessage"]; 
+}
+<h5>Изменение книги</h5>
+<hr />
+<div>
+    @if( categoryError != null)
+    {
+        <span id="error-message" class="text-danger">@categoryError</span>
+    }
+    <form method="post" enctype="multipart/form-data" id="book-form" asp-action="EditBook">
+        <div class="form-group">
+            <label for="Id" style="width:30%; margin-right:10%;">Id</label>
+            <input style="width:60%;" class="form-control" asp-for="Id" readonly="readonly" id="Title" value="@book.Id" />
+            <span asp-validation-for="Id" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="Title" style="width:30%; margin-right:10%;">Название</label>
+            <input style="width:60%;" class="form-control" asp-for="Title" type="text" id="Title" value="@book.Title" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="Author" style="width:30%; margin-right:10%;">Автор</label>
+            <input style="width:60%;" class="form-control" asp-for="Author" type="text" id="Author" value="@book.Author" />
+            <span asp-validation-for="Author" class="text-danger"></span>
+        </div>
+        @if (categoryList != null)
+        {
+            <div class="form-group">
+                <label for="CategoryId" style="width:30%; margin-right:10%;">Категория</label>
+                <select asp-for="CategoryId" class="custom-select" style="width:60%;" id="CategoryId">
+                    <option value="-1">Выберите категорию</option>
+                    @foreach (var category in categoryList)
+                    {
+                        <option value="@category.Id">@category.CategoryName</option>
+                    }
+                </select>
+                <span asp-validation-for="CategoryId" class="text-danger"></span>
+            </div>
+        }
+        <div class="form-group">
+            <label for="YearOfPublishing" style="width:30%; margin-right:10%;">Год публикации</label>
+            <input style="width:60%;" class="form-control" asp-for="YearOfPublishing" type="number" id="YearOfPublishing" value="@book.YearOfPublishing"/>
+            <span asp-validation-for="YearOfPublishing" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="BookCost" style="width:30%; margin-right:10%;">Цена</label>
+            <input style="width:60%;" class="form-control" asp-for="BookCost" type="number" id="BookCost"  value="@book.BookCost"/>
+            <span asp-validation-for="BookCost" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="Amount" style="width:30%; margin-right:10%;">Количество</label>
+            <input style="width:60%;" class="form-control" asp-for="Amount" type="number" id="Amount" value="@book.Amount"/>
+            <span asp-validation-for="Amount" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="Description" style="width:30%; margin-right:10%;">Описание</label>
+            <textarea style="width:60%;" class="form-control" asp-for="Description" id="Description"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="ImageLink" style="width:30%; margin-right:10%;" class="control-label"></label>
+            <div class="custom-file">
+                <input style="width:60%;" asp-for="ImageLink" class="custom-file-input" id="ImageLink">
+                <label style="width:60%;" class="custom-file-label" for="ImageLink">Выберите фотографию</label>
+            </div>
+            <span asp-validation-for="ImageLink" class="text-danger"></span>
+        </div>
+        <input class="btn btn-primary" type="submit" value="Сохранить" />
+    </form>
+
+</div>
+
+@section Scripts{
+    <script type="text/javascript">
+        $(".custom-file-input").on("change", function () {
+            var fileName = $(this).val().split("\\").pop();
+            $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+        });
+        document.getElementById('Description').textContent = @book.Description; 
+    </script>
+}  

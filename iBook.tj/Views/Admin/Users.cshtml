@@ -1,0 +1,146 @@
+﻿@{
+    ViewData["Title"] = "Пользователи";
+    Layout = "~/Views/Admin/_LayoutAdmin.cshtml";
+    List<iBook.tj.Areas.Identity.Data.iBooktjUser> usersAdminList = ViewBag.usersAdminList;
+    var currentUser = User.Identity.Name;
+}
+@if (usersAdminList != null)
+{
+    <div id="root">
+        <div class="col-12">
+            <div class="table-responsive">
+                <input type="hidden" value="@currentUser" id="current-user" />
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Имя</th>
+                            <th scope="col">Фамилие</th>
+                            <th scope="col">Логин</th>
+                            <th scope="col">Роль</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-table">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+@section Scripts{ 
+
+    <script type="text/javascript">
+        getUsers();
+        function getUsers() {
+            $.ajax({
+                type: "GET",
+                url: `/Admin/GetUsers`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (result, status, xhr) {
+                    console.log(result);
+                    showUsers(result)
+                },
+                error: function (xhr, status, error) {
+                    console.log(xhr);
+                },
+            });
+        }
+        function showUsers(users) {
+            const userTable = document.getElementById('user-table');
+            let numberOfUser = 1;
+            const currentUser = $('#current-user').val();
+            const usersResult = Array.from(users);
+            for (let i = 0; i < usersResult.length; i++) {
+
+                const user = usersResult[i];
+                if (user.userName != currentUser) {
+
+                    const userTableRow = document.createElement('tr');
+                    userTableRow.dataset.id = user.userName;
+
+                    const userNumberEl = document.createElement('td');
+                    userNumberEl.textContent = numberOfUser;
+                    numberOfUser++;
+                    userTableRow.appendChild(userNumberEl);
+
+                    const firstNameEl = document.createElement('td');
+                    firstNameEl.textContent = user.firstName;
+                    userTableRow.appendChild(firstNameEl);
+
+                    const lastNameEl = document.createElement('td');
+                    lastNameEl.textContent = user.lastName;
+                    userTableRow.appendChild(lastNameEl);
+
+                    const userNameEl = document.createElement('td');
+                    userNameEl.textContent = user.userName;
+                    userTableRow.appendChild(userNameEl);
+
+                    const userRoleEl = document.createElement('td');
+                    userRoleEl.textContent = 'admin';
+                    userTableRow.appendChild(userRoleEl);
+
+                    const buttonDeleteContainerEl = document.createElement('td');
+                    userTableRow.appendChild(buttonDeleteContainerEl);
+
+                    const buttonDeleteEl = document.createElement('button');
+                    buttonDeleteEl.dataset.action = 'delete';
+                    buttonDeleteEl.className = 'btn btn-sm btn-danger';
+                    buttonDeleteContainerEl.appendChild(buttonDeleteEl);
+
+                    const buttonDeleteIconEl = document.createElement('i');
+                    buttonDeleteIconEl.className = 'fa fa-trash';
+                    buttonDeleteIconEl.dataset.action = 'delete';
+                    buttonDeleteEl.appendChild(buttonDeleteIconEl);
+
+                    userTableRow.addEventListener('click', evt => {
+                        if (evt.target.dataset.action !== 'delete') {
+                            return;
+                        }
+                        deleteUserRow(evt.currentTarget.dataset.id, evt.currentTarget);
+                    });
+
+
+                    userTable.appendChild(userTableRow);
+                }
+
+            }
+        }
+        function deleteUserRow(userName, row) {
+            $.ajax({
+
+                type: 'DELETE',
+                url: '/Admin/DeleteUser',
+                data: JSON.stringify(userName),
+                dataType: 'json',
+                success: function (result, status, xhr) {
+                    if (result.success === 'success') {
+                        const userTable = document.getElementById('user-table');
+                        userTable.removeChild(evt.currentTarget);
+
+                        const rootEl = document.getElementById('root');
+                        const messageEl = document.createElement('span');
+                        messageEl.className = 'text-success';
+                        messageEl.textContent = 'Пользователь удален';
+                        rootEl.insertBefore(messageEl, rootEl.firstChild);
+                        setTimeout(() => {
+                            rootEl.removeChild(messageEl);
+                        }, 3000);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    const rootEl = document.getElementById('root');
+                    const messageEl = document.createElement('span');
+                    messageEl.className = 'text-danger';
+                    messageEl.textContent = 'Пользователь не удален. Произошла ошибка';
+                    rootEl.insertBefore(messageEl, rootEl.firstChild);
+                    setTimeout(() => {
+                        rootEl.removeChild(messageEl);
+                    }, 3000);
+                },
+
+            });
+        }
+
+    </script>
+}

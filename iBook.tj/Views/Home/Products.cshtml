@@ -1,0 +1,351 @@
+﻿@{
+    var username = User.Identity.Name; 
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    List<iBook.tj.Models.Category> categoriesList = ViewBag.categoriesList;
+}
+<div id="root">
+    <input type="hidden" value="@username" id="username"/>
+    <span id="message"></span>
+    <div class="container float-left" style="width:30%;height:100%;">
+        <h6>Поиск</h6>
+        <hr />
+        @if (categoriesList != null)
+        {
+            <div class="row" style="margin-bottom:10px">
+                <div class="col-3 col-md-3 col-lg-3 col-xl-3">
+                    <label for="category-select" style="margin-right:10%; width:30%;">Категория</label>
+                </div>
+                <div class="col-9 col-xl-9 col-lg-9">
+                    <select class="custom-select" id="category-select" name="category-select" ; width: 100%;">
+                        <option id="default" value="-1">Выберите категорию</option>
+                        <option value="-2">Все категории</option>
+                        @foreach (var category in categoriesList)
+                        {
+                            <option value="@category.Id">@category.CategoryName</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        }
+        <div class="form-group">
+            <input class="form-control" placeholder="Автор" id="author-name" name="author-name" />
+            <span class="text-left" id="author-message"></span>
+        </div>
+        <div class="form-group">
+            <input class="form-control" placeholder="Название" id="book-name" name="book-name" />
+            <span class="text-left" id="book-message"></span>
+        </div>
+        <button class="btn btn-primary" id="button-search">Поиск</button>
+    </div>
+        
+    <div style="display:flex; flex-wrap:wrap;" id="products-container">
+        
+    </div>
+        
+</div>
+
+@section Scripts{
+    <script type="text/javascript">
+        const usernameEl = $('#username');
+        const categoryEl = $('#category-select');
+        const buttonSearchEl = $('#button-search');
+        const loaderImageEl = document.createElement('img');
+        loaderImageEl.src = '/images/loader.gif';
+        const bookInputEl = document.getElementById('book-name');
+        const authorInputEl = document.getElementById('author-name');
+        const productsContainerEl = document.getElementById('products-container');
+        const mainMessageEl = document.getElementById('message');
+
+        authorInputEl.addEventListener('change', evt => {
+            let categoryVal = Number(document.getElementById('category-select').value);
+            if (categoryVal === -1 || categoryVal === -2) {
+                categoryVal = 0;
+            }
+            const authorInputValue = authorInputEl.value.trim();
+            const booknameVal = bookInputEl.value.trim();
+            const searchData = {
+                category: categoryVal,
+                author: authorInputValue,
+                bookname: booknameVal,
+            };
+            $.ajax({
+                type: 'POST',
+                url: '/Home/SearchByAuthor',
+                data: JSON.stringify(searchData),
+                dataType: 'json',
+                async: true,
+                success: function (result, status, xhr) {
+                    showProducts(result);
+                },
+                error: function (xhr, status, error) {
+                    console.log(xhr);
+                },
+            });
+        });
+        bookInputEl.addEventListener('change', evt => {
+            let categoryVal = Number(document.getElementById('category-select').value);
+            if (categoryVal === -1 || categoryVal === -2) {
+                categoryVal = 0;
+            }
+            const authorInputValue = authorInputEl.value.trim();
+            const booknameVal = bookInputEl.value.trim();
+            const searchData = {
+                category: categoryVal,
+                author: authorInputValue,
+                bookname: booknameVal,
+            };
+            $.ajax({
+                type: 'POST',
+                url: '/Home/SearchByAuthor',
+                data: JSON.stringify(searchData),
+                dataType: 'json',
+                async: true,
+                success: function (result, status, xhr) {
+                    showProducts(result);
+                },
+                error: function (xhr, status, error) {
+                    console.log(xhr);
+                },
+            });
+        });
+        
+        getProducts(-2);
+
+        categoryEl.on('change', function () {
+            let categoryValue = $(this).val();
+            if (categoryValue == -1) {
+                categoryValue = -2;
+            }
+            getProducts(categoryValue);
+        });
+
+        function getProducts(categoryValue) {
+            $.ajax({
+                type: 'GET',
+                url: `/Home/ProductsCategory/${categoryValue}`,
+                dataType: 'json',
+                async: true,
+                success: function (result, status, xhr) {
+                    if (result.success !== 'not found') {
+                        if (result.length === 0) {
+                            document.getElementById('products-container').innerHTML = `<p class="text-danger">Категория пуста</p>`;
+                        }
+                        showProducts(result);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    document.getElementById('products-container').innerHTML = `<p class="text-danger">Не найдено</p>`;
+                },
+            });
+        }
+        function showProducts(products) {
+            productsContainerEl.innerHTML = '';
+            for (let i = 0; i < products.length; i++) {
+                const book = products[i];
+
+                const bookContainerEl = document.createElement('div');
+                bookContainerEl.className = 'book-container text-center';
+                bookContainerEl.style.width = '30%';
+                bookContainerEl.dataset.bookId = book.id;
+                productsContainerEl.appendChild(bookContainerEl);
+
+                const bookImageEl = document.createElement('img');
+                bookImageEl.src = '/images/' + book.imageLink;
+                bookImageEl.style.width = '100%';
+                bookImageEl.height = '150'
+                bookContainerEl.appendChild(bookImageEl);
+
+                const bookLinkEl = document.createElement('a');
+                bookLinkEl.href = `/Home/Product/${book.id}`;
+                bookContainerEl.appendChild(bookLinkEl);
+
+                const bookTitleEl = document.createElement('h4');
+                bookTitleEl.textContent = book.title;
+                bookTitleEl.style.margin = '20px';
+                bookTitleEl.className = 'text-center text-primary'
+                bookLinkEl.appendChild(bookTitleEl);
+
+
+                const bookAuthorEl = document.createElement('h5');
+                bookAuthorEl.textContent = book.author;
+                bookAuthorEl.className = 'text-center';
+                bookContainerEl.appendChild(bookAuthorEl);
+
+                const bookCategoryEl = document.createElement('h6');
+                bookCategoryEl.className = 'text-dark text-info';
+                bookCategoryEl.textContent = book.categoryName;
+                bookContainerEl.appendChild(bookCategoryEl);
+
+                const bookDescriptionEl = document.createElement('p');
+                bookDescriptionEl.className = 'text-info';
+                bookDescriptionEl.style.margin = '10px';
+                bookDescriptionEl.textContent = book.description;
+                bookContainerEl.appendChild(bookDescriptionEl);
+
+                const bookCostContainerEl = document.createElement('div');
+                bookCostContainerEl.className = 'row';
+                bookCostContainerEl.style.marginLeft = '10px';
+                bookContainerEl.appendChild(bookCostContainerEl);
+
+                const bookCostColumnEl = document.createElement('div');
+                bookCostColumnEl.style.width = '25%';
+                bookCostContainerEl.appendChild(bookCostColumnEl);
+
+                const bookCostTextEl = document.createElement('h5');
+                bookCostTextEl.textContent = book.bookCost + 'c.';
+                bookCostTextEl.style.fontSize = 'small';
+                bookCostTextEl.style.color = 'dimgrey';
+                bookCostColumnEl.appendChild(bookCostTextEl);
+
+                const bookAmountColumnEl = document.createElement('div');
+                bookAmountColumnEl.style.width = '25%';
+                bookCostContainerEl.appendChild(bookAmountColumnEl);
+
+                const bookAmountInputEl = document.createElement('input');
+                bookAmountInputEl.dataset.id = 'order';
+                bookAmountInputEl.value = 1;
+                bookAmountInputEl.style.width = '100%';
+                bookAmountInputEl.type = 'number';
+                bookAmountColumnEl.appendChild(bookAmountInputEl);
+
+                bookAmountInputEl.addEventListener('change', evt => {
+                    if (evt.target.value < 1) {
+                        evt.target.value = 1; 
+                        return; 
+                    }
+                    const timeToHideMessage = 1500;
+                    const bookContainer = document.querySelector(`[data-book-id = "${book.id}"]`);
+                    if (evt.target.value > book.amount) {
+                        const message = document.createElement('span');
+                        evt.target.value = book.amount;
+                        message.textContent = 'Достигло максимального количества';
+                        message.style.display = 'block';
+                        message.className = 'text-danger';
+                        bookContainer.appendChild(message);
+                        setTimeout(() => {
+                            bookContainer.removeChild(message);
+                        }, timeToHideMessage);
+                        return; 
+                    }
+                });
+
+                const bookButtonAddToCartColumnEl = document.createElement('div');
+                bookButtonAddToCartColumnEl.style.width = '40%';
+                bookButtonAddToCartColumnEl.style.marginRight = '1%';
+                bookButtonAddToCartColumnEl.style.marginLeft = '1%';
+                bookCostContainerEl.appendChild(bookButtonAddToCartColumnEl);
+
+                const bookButtonAddToCartEl = document.createElement('button');
+                bookButtonAddToCartEl.className = 'btn btn-success';
+                bookButtonAddToCartEl.textContent = 'В корзину';
+                bookButtonAddToCartEl.style.fontSize = 'small';
+                bookButtonAddToCartEl.dataset.action = 'add';
+                bookButtonAddToCartEl.style.width = '100%';
+                bookButtonAddToCartColumnEl.appendChild(bookButtonAddToCartEl);
+
+                const bookAvailableEl = document.createElement('p');
+                bookAvailableEl.style.marginTop = '10px';
+                bookAvailableEl.style.marginLeft = '10px';
+                bookAvailableEl.style.fontSize = 'small';
+                bookAvailableEl.className = 'text-left';
+                if (book.amount > 0) {
+                    bookAvailableEl.textContent = 'Есть в наличии';
+                }
+                else {
+                    bookAvailableEl.textContent = 'Нет в наличии';
+                }
+                bookContainerEl.appendChild(bookAvailableEl);
+
+                bookContainerEl.addEventListener('click', evt => {
+                    if (evt.target.dataset.action !== 'add') {
+                        return;
+                    }
+                    const bookAmount = bookAmountInputEl.value;
+                    addToCart(evt.currentTarget.dataset.bookId, usernameEl.val(), bookAmount);
+                });
+            }
+        }
+        function addToCart(id, username, amountValue) {
+            const message = document.createElement('span');
+            const bookContainer = document.querySelector(`[data-book-id="${id}"]`);
+            const bookAmount = bookContainer.querySelector('[data-id="order"]');
+            message.dataset.id = 'message';
+            message.style.fontSize = '90%';
+            bookContainer.appendChild(message);
+
+            const timeToHideMessage = 1500;
+            const usernameObj = {
+                id: id,
+                username: username,
+                bookamount: amountValue,
+            };
+            $.ajax({
+                type: 'POST',
+                url: `/Home/AddToCart`,
+                data: JSON.stringify(usernameObj),
+                dataType: 'json',
+                async: true,
+                success: function (result, status, xhr) {
+                    if (result.success == 'register') {
+                        message.textContent = 'Необходимо зарегистрироваться или войти в аккаунт';
+                        message.className = 'text-danger';
+                        message.style.display = 'block';
+                        setTimeout(() => {
+                            message.style.display = 'none';
+                        }, timeToHideMessage);
+                    }
+                    else {
+                        message.className = 'text-success';
+                        message.style.display = 'block';
+                        message.textContent = 'Добавлено в корзину';
+                        setTimeout(() => {
+                            message.style.display = 'none';
+                        }, timeToHideMessage);
+                        bookAmount.value = 1;
+                    }
+                },
+                error: function (xhr, status, error) {
+                    message.className = 'text-danger';
+                    message.style.display = 'block';
+                    message.textContent = `Произошла ошибка:${xhr.statusText}`;
+                    setTimeout(() => {
+                        message.style.display = 'none';
+                    }, timeToHideMessage);
+                },
+            });
+        }
+
+        buttonSearchEl.on('click', function () {
+
+            let categoryVal = Number(document.getElementById('category-select').value);
+            if (categoryVal === -1 || categoryVal === -2) {
+                categoryVal = 0;
+            }
+            const authorInputValue = authorInputEl.value.trim();
+            const booknameVal = bookInputEl.value.trim(); 
+            const searchData = {
+                category: categoryVal,
+                author: authorInputValue,
+                bookname: booknameVal,
+            };
+            productsContainerEl.innerHTML = '';
+            productsContainerEl.appendChild(loaderImageEl);
+
+            $.ajax({
+                type: 'POST',
+                url: '/Home/SearchByAuthor',
+                data: JSON.stringify(searchData),
+                dataType: 'json',
+                async: true,
+                success: function (result, status, xhr) {
+                    showProducts(result);
+                },
+                error: function (xhr, status, error) {
+                    console.log(xhr);
+                },
+            });
+        });
+        
+
+    </script>
+}

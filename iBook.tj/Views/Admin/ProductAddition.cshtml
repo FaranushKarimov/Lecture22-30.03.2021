@@ -1,0 +1,92 @@
+﻿@model iBook.tj.ViewModels.BookViewModel;
+@{
+    ViewData["Title"] = "Добавление новой книги";
+    Layout = "~/Views/Admin/_LayoutAdmin.cshtml";
+    var categoryList = ViewBag.categoryList;
+    var message = ViewData["Message"];
+    Console.WriteLine(message);
+}
+
+<h5>Добавление новой книги</h5>
+<hr />
+@if (message != null)
+{
+    string messageString = message.ToString();
+
+    if (messageString.ToLower().Contains("успешно"))
+    {
+        <span class="text-success">@messageString</span>
+    }
+    else
+    {
+        <span class="text-danger">@messageString</span>
+    }
+}
+<div class="container">
+
+    <form method="post" enctype="multipart/form-data" id="book-form" asp-action="AddProduct">
+        <div class="form-group">
+            <label for="Title" style="width:30%; margin-right:10%;">Название</label>
+            <input style="width:60%;" class="form-control" asp-for="Title" type="text" id="Title" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="Author" style="width:30%; margin-right:10%;">Автор</label>
+            <input style="width:60%;" class="form-control" asp-for="Author" type="text" id="Author" />
+            <span asp-validation-for="Author" class="text-danger"></span>
+        </div>
+        @if (categoryList != null)
+        {
+            <div class="form-group">
+                <label for="CategoryId" style="width:30%; margin-right:10%;">Категория</label>
+                <select asp-for="CategoryId" class="custom-select" style="width:60%;" id="CategoryId">
+                    <option value="-1">Выберите категорию</option>
+                    @foreach (var category in categoryList)
+                    {
+                        <option value="@category.Id">@category.CategoryName</option>
+                    }
+                </select>
+                <span asp-validation-for="CategoryId" class="text-danger"></span>
+            </div>
+        }
+        <div class="form-group">
+            <label for="YearOfPublishing" style="width:30%; margin-right:10%;">Год публикации</label>
+            <input style="width:60%;" class="form-control" asp-for="YearOfPublishing" type="number" id="YearOfPublishing" />
+            <span asp-validation-for="YearOfPublishing" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="BookCost" style="width:30%; margin-right:10%;">Цена</label>
+            <input style="width:60%;" class="form-control" asp-for="BookCost" type="number" id="BookCost" />
+            <span asp-validation-for="BookCost" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="Amount" style="width:30%; margin-right:10%;">Количество</label>
+            <input style="width:60%;" class="form-control" asp-for="Amount" type="number" id="Amount" />
+            <span asp-validation-for="Amount" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="Description" style="width:30%; margin-right:10%;">Описание</label>
+            <textarea style="width:60%;" class="form-control" asp-for="Description" id="Description"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="ImageLink" style="width:30%; margin-right:10%;" class="control-label"></label>
+            <div class="custom-file">
+                <input style="width:60%;" asp-for="ImageLink" class="custom-file-input" id="ImageLink">
+                <label style="width:60%;" class="custom-file-label" for="ImageLink">Выберите фотографию</label>
+            </div>
+            <span asp-validation-for="ImageLink" class="text-danger"></span>
+        </div>
+        <input class="btn btn-primary" type="submit" value="Добавить" />
+    </form>
+
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        $(".custom-file-input").on("change", function () {
+            var fileName = $(this).val().split("\\").pop();
+            $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+        });
+    </script>
+}  
